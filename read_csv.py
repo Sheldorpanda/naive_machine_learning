@@ -5,23 +5,23 @@ import csv
 # .csv I/O
 def read(file):
     with open(file, 'r') as f:
-        reader = csv.reader(f)
+        reader = csv.reader(f, delimiter = ',')
         data = list(reader)
     return data
 
 def write(file, data):
     with open(file, 'w') as f:
-        writer = csv.writer(f)
+        writer = csv.writer(f, delimiter = ',')
         writer.writerows(data)
     return
 
 # Validate command line argument list
 def validate():
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 3:
         raise ValueError("Invalid number of input")
 
-    train_file = sys.argv[0].trim()
-    test_file = sys.argv[1].trim()
+    train_file = sys.argv[1].strip()
+    test_file = sys.argv[2].strip()
 
     if train_file[-4:] != ".csv" or test_file[-4:] != ".csv":
         raise ValueError("Invalid input format, both files should be in .csv ")

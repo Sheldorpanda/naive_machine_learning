@@ -1,4 +1,5 @@
-import cmath
+import math
+import numpy
 
 # General tree implementation
 class Tree(object):
@@ -11,35 +12,42 @@ def column(data, i):
     return [row[i] for row in data]
 
 def distinct_val(col):
+    dict = {}
     distinct = set(col)
     for val in distinct:
-        dict[val] += 1
+        count = 0;
+        for entry in col:
+            if entry == val:
+                count+=1
+        dict[val] = count
     return dict
 
-def e(p):
+def entropy_aux(p):
     if p <= 0:
         return 0
-    return -p*log(p)
+    return -p*math.log(p)
 
 def entropy(data, k):
-    frequency = {} # dict = [attribute val : [target val : count]]
-    distinct_attr = set(data[k])
-    count_attr = distinct_val(data[k])
-    n_attr = len(distinct_attr)
-    distinct_target = set(data[-1])
-    count_target = distinct_val(data[-1])
-    n_target = len(distinct_target)
-    for a in distinct_attr:
-        for v in distinct_target:
-            frequency[a][v] = 0
+    dict_a = distinct_val(column(data, k))
+    dict_t = distinct_val(column(data, -1))
+    list_a = list(dict_a.keys())
+    list_t = list(dict_t.keys())
+    n_a = len(list_a)
+    n_t = len(list_t)
+    frequency = numpy.zeros((n_a, n_t))
     for row in data:
-        frequency[data[i]][data[-1]] += 1
+        val_a = row[k]
+        val_t = row[-1]
+        i_a = list_a.index(val_a)
+        i_t = list_t.index(val_t)
+        frequency[i_a][i_t] += 1
     sum_e = 0
-    for a in distinct_attr:
-        p_a = count_attr[a]/n_attr
+    for i in range(0, n_a):
+        p_a = dict_a[list_a[i]]/len(data)
+        sum_t = sum(frequency[i])
         e = 0
-        for v in distinct_target:
-            e += e(count_target[v]/n_target)
+        for j in range(0, n_t):
+            e += entropy_aux(frequency[i][j]/sum_t)
         sum_e += p_a * e
     return sum_e
 
@@ -60,6 +68,8 @@ def partition(data, visited):
     dict = distinct_val(column(data, max_i))
     dict_data = {} # dict [attribute val: paritioned data matrix]
     for val in dict.keys():
+        dict_data[val] = list()
+    for val in dict.keys():
         for row in data:
             if val == row[max_i]:
                 dict_data[val].append(row)
@@ -79,7 +89,7 @@ def leaf_case(dict_data):
     children = {}
     for key in dict_data.keys():
         data = dict_data[key]
-        children[key] = highest_freq(column(data, -1))
+        children[key] = Tree(highest_freq(column(data, -1)), {})
     return children
 
 def learn(data, visited):
@@ -101,12 +111,15 @@ def id3_train(data):
     return learn(data, visited)
 
 # Testing phase methods: Output learned results of testing data
-def hypotehsis(row, dt):
+def hypothesis(row, dt):
     if not dt.children: # Leaf reached
         return dt.id
+    if not dt.children[row[dt.id]]:
+        print("Unmet attribute value at " + str(dt.id))
+        return -1
     return hypothesis(row, dt.children[row[dt.id]]) # Recursively going deeper
 
 def id3_test(data, dt):
     for row in data:
-        row.append(hypotehsis(row, dt))
+        row.append(hypothesis(row, dt))
     return data
